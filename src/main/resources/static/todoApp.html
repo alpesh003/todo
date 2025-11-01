@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>To-Do List</title>
+    <style>
+    #todoList {
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    #todoList th, #todoList td {
+        border: 1px solid black;
+        padding: 8px;
+        text-align: left;
+    }
+
+    #todoList th {
+        background-color: #f2f2f2;
+    }
+        .completed {
+        text-decoration: line-through;
+        color: gray;
+    }
+</style>
+</head>
+<body>
+<h1>To-Do List</h1>
+<form id="todoForm">
+    <input type="text" id="title" placeholder="Title">
+    <input type="text" id="description" placeholder="Description">
+    <button type="submit">Add ToDo</button>
+</form>
+<br>
+<table id="todoList">
+    <thead>
+    <tr>
+        <th>Select</th>
+        <th>Title</th>
+        <th>Description</th>
+        <th>Date Added</th>
+        <th>Status</th>
+    </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+<br>
+<button id="deleteButton">Delete Selected To-Do</button>
+<button id="refreshButton">Refresh</button>
+<button id="completeButton">Mark as Complete</button>
+
+<script>
+document.getElementById('refreshButton').addEventListener('click', function() {
+    window.location.reload();
+});
+        document.getElementById('todoForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const title = document.getElementById('title').value;
+            const description = document.getElementById('description').value;
+
+            fetch('http://localhost:8080/api/todos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ title, description, completed: false }),
+            })
+            .then(response => response.json())
+            .then(todo => {
+fetch('http://localhost:8080/api/todos')
+    .then(response => response.json())
+    .then(todos => {
+        const todoTableBody = document.querySelector('#todoList tbody');
+        todoTableBody.innerHTML = ''; // Clear existing rows
+        todos.forEach(todo => {
+            const row = document.createElement('tr');
+
+            const checkboxCell = document.createElement('td');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = todo.id;
+            checkboxCell.appendChild(checkbox);
+
+            const titleCell = document.createElement('td');
+            titleCell.textContent = todo.title;
+
+            const descriptionCell = document.createElement('td');
+            descriptionCell.textContent = todo.description;
+
+            const dateCell = document.createElement('td');
+            const date = new Date(todo.dateAdded).toLocaleString();
+            dateCell.textContent = date;
+
+            const statusCell = document.createElement('td');
+            statusCell.textContent = todo.completed ? 'Completed' : 'Pending';
+             if (todo.completed) {
+                row.classList.add('completed');
+            }
+
+            row.appendChild(checkboxCell);
+            row.appendChild(titleCell);
+            row.appendChild(descriptionCell);
+            row.appendChild(dateCell);
+            row.appendChild(statusCell);
+
+            todoTableBody.appendChild(row);
+        });
+    })
+    .catch(error => console.error('Error fetching To-Dos:', error));
+
+                // Clear the input fields
+                document.getElementById('title').value = '';
+                document.getElementById('description').value = '';
+            });
+        });
+
+document.getElementById('deleteButton').addEventListener('click', function() {
+    const checkboxes = document.querySelectorAll('#todoList input[type="checkbox"]:checked');
+    const idsToDelete = Array.from(checkboxes).map(checkbox => checkbox.value);
+
+    if (idsToDelete.length > 0) {
+        const confirmation = confirm('Are you sure you want to delete the selected To-Do items?');
+
+        if (confirmation) {
+            idsToDelete.forEach(id => {
+                fetch(`http://localhost:8080/api/todos/${id}`, {
+                    method: 'DELETE',
+                })
+                .then(() => {
+                    const row = document.querySelector(`#todoList input[type="checkbox"][value="${id}"]`).closest('tr');
+                    if (row) {
+                        row.remove(); // Remove the row from the table
+                    }
+                })
+                .catch(error => console.error('Error deleting To-Do:', error));
+            });
+        }
+    } else {
+        alert('No To-Do items selected for deletion.');
+    }
+});
+
+document.getElementById('completeButton').addEventListener('click', function() {
+    const checkboxes = document.querySelectorAll('#todoList input[type="checkbox"]:checked');
+    const idsToComplete = Array.from(checkboxes).map(checkbox => checkbox.value);
+
+    if (idsToComplete.length > 0) {
+        idsToComplete.forEach(id => {
+            fetch(`http://localhost:8080/api/todos/${id}/complete`, {
+                method: 'PUT',
+            })
+            .then(response => response.json())
+            .then(updatedTodo => {
+                const row = document.querySelector(`#todoList input[type="checkbox"][value="${id}"]`).closest('tr');
+                if (row) {
+                    const statusCell = row.querySelector('td:last-child');
+                    console.log('Todo item status:', updatedTodo);
+                    console.log('Todo item status:', updatedTodo.completed);
+                    statusCell.textContent = updatedTodo.completed ? 'Completed' : 'Pending';
+                     if (updatedTodo.completed) {
+                        row.classList.add('completed');
+                    }
+                }
+            })
+            .catch(error => console.error('Error marking To-Do as complete:', error));
+        });
+    } else {
+        alert('No To-Do items selected for completion.');
+    }
+});
+
+fetch('http://localhost:8080/api/todos')
+    .then(response => response.json())
+    .then(todos => {
+        const todoTableBody = document.querySelector('#todoList tbody');
+        todoTableBody.innerHTML = ''; // Clear existing rows
+        todos.forEach(todo => {
+            const row = document.createElement('tr');
+
+            const checkboxCell = document.createElement('td');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = todo.id;
+            checkboxCell.appendChild(checkbox);
+
+            const titleCell = document.createElement('td');
+            titleCell.textContent = todo.title;
+
+            const descriptionCell = document.createElement('td');
+            descriptionCell.textContent = todo.description;
+
+            const dateCell = document.createElement('td');
+            const date = new Date(todo.dateAdded).toLocaleString();
+            dateCell.textContent = date;
+
+            const statusCell = document.createElement('td');
+            statusCell.textContent = todo.completed ? 'Completed' : 'Pending';
+             if (todo.completed) {
+                row.classList.add('completed');
+            }
+
+            row.appendChild(checkboxCell);
+            row.appendChild(titleCell);
+            row.appendChild(descriptionCell);
+            row.appendChild(dateCell);
+            row.appendChild(statusCell);
+
+            todoTableBody.appendChild(row);
+        });
+    })
+    .catch(error => console.error('Error fetching To-Dos:', error));
+    </script>
+</body>
+</html>
